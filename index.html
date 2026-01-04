@@ -34,23 +34,789 @@
             background-image: url('https://www.transparenttextures.com/patterns/felt.png');
         }
     </style>
-
-<link rel="stylesheet" href="/index.css">
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "recharts": "https://esm.sh/recharts@^3.6.0"
-  }
-}
-</script>
-  <script type="module" crossorigin src="/assets/index-C_Mr_r2U.js"></script>
+        <!-- React/DOM UMD для прямого запуска через file:// -->
+        <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+        <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+        <!-- Babel Standalone, чтобы на лету транспилировать JSX из этого файла -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
     <div class="grain-overlay"></div>
+<script type="text/babel" data-presets="env,react">
+    // Простейший вывод ошибок прямо на странице, чтобы увидеть причину белого экрана
+    const showError = (msg) => {
+        const box = document.createElement('div');
+        box.style.position = 'fixed';
+        box.style.bottom = '16px';
+        box.style.left = '16px';
+        box.style.zIndex = '9999';
+        box.style.padding = '12px 16px';
+        box.style.background = '#fee2e2';
+        box.style.color = '#7f1d1d';
+        box.style.border = '1px solid #fecaca';
+        box.style.borderRadius = '8px';
+        box.style.fontFamily = 'monospace';
+        box.textContent = `Ошибка: ${msg}`;
+        document.body.appendChild(box);
+    };
+    window.addEventListener('error', (e) => showError(e.message));
+    window.addEventListener('unhandledrejection', (e) => showError(e.reason?.message || e.reason || 'Unhandled rejection'));
+
+    if (!window.React || !window.ReactDOM) {
+        showError('React не загрузился');
+    }
+
+    const { useState, useMemo } = React;
+    // Убрали зависимость от Recharts, делаем простые SVG визуализации
+
+    const View = {
+        INTRO: 'INTRO',
+        CALHOUN: 'CALHOUN',
+        DUNBAR: 'DUNBAR',
+        ECONOMY: 'ECONOMY',
+        MAP: 'MAP',
+        TRANSITION: 'TRANSITION',
+        NATURE: 'NATURE',
+        WISDOM: 'WISDOM'
+    };
+
+    const Navigation = ({ currentView, setView }) => {
+        const links = [
+            { id: View.INTRO, label: 'Начало', icon: '📜' },
+            { id: View.CALHOUN, label: 'Клоака', icon: '🏙️' },
+            { id: View.DUNBAR, label: 'Община', icon: '👥' },
+            { id: View.ECONOMY, label: 'Уклад', icon: '🌾' },
+            { id: View.MAP, label: 'Поселение', icon: '🏡' },
+            { id: View.TRANSITION, label: 'Переход', icon: '🛤️' },
+            { id: View.NATURE, label: 'Природа', icon: '🌿' },
+            { id: View.WISDOM, label: 'Мудрость', icon: '👴' },
+        ];
+
+        return (
+            <nav className="fixed bottom-0 left-0 w-full md:relative md:bottom-auto bg-stone-50/90 backdrop-blur-md border-t md:border-t-0 md:bg-transparent border-stone-200 z-50">
+                <div className="flex overflow-x-auto no-scrollbar md:overflow-visible py-2 px-4 space-x-2 md:space-x-4 justify-start md:justify-end items-center">
+                    {links.map((link) => (
+                        <button
+                            key={link.id}
+                            onClick={() => setView(link.id)}
+                            className={`flex flex-col md:flex-row items-center space-y-1 md:space-y-0 md:space-x-2 px-3 py-2 rounded-xl transition-all whitespace-nowrap ${
+                                currentView === link.id 
+                                    ? 'bg-stone-900 text-white shadow-lg scale-105' 
+                                    : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/50'
+                            }`}
+                        >
+                            <span className="text-lg md:text-sm">{link.icon}</span>
+                            <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
+                                {link.label}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </nav>
+        );
+    };
+
+    const Intro = ({ onNext }) => (
+        <div className="flex flex-col items-center justify-center text-center space-y-8 md:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div className="max-w-2xl space-y-6 md:space-y-8">
+                <h2 className="text-4xl md:text-7xl font-serif text-stone-900 leading-tight">
+                    Мир, где правда в глазах соседа.
+                </h2>
+                <div className="h-px w-24 bg-stone-300 mx-auto"></div>
+                <p className="text-lg md:text-2xl text-stone-600 leading-relaxed font-light italic px-4">
+                    "Путь к свободе лежит через возделанный сад."
+                </p>
+            </div>
+            <button 
+                onClick={onNext}
+                className="px-8 md:px-10 py-3 md:py-4 bg-stone-900 text-white rounded-full hover:bg-stone-800 transition-all transform hover:scale-105 uppercase tracking-widest text-xs md:text-sm font-bold shadow-xl"
+            >
+                Начать Исход
+            </button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mt-8 md:mt-12 text-left px-4">
+                <div className="p-6 border border-stone-200 bg-stone-50/50 rounded-2xl">
+                    <h3 className="font-bold text-stone-800 mb-2 uppercase text-[10px] tracking-tighter">Личный Суверенитет</h3>
+                    <p className="text-stone-500 text-xs">Независимость от централизованных систем через собственное производство и аскезу.</p>
+                </div>
+                <div className="p-6 border border-stone-200 bg-stone-50/50 rounded-2xl">
+                    <h3 className="font-bold text-stone-800 mb-2 uppercase text-[10px] tracking-tighter">Власть Опыта</h3>
+                    <p className="text-stone-500 text-xs">Старостат как естественная иерархия уважения, а не принуждения.</p>
+                </div>
+                <div className="p-6 border border-stone-200 bg-stone-50/50 rounded-2xl">
+                    <h3 className="font-bold text-stone-800 mb-2 uppercase text-[10px] tracking-tighter">Тихий Саботаж</h3>
+                    <p className="text-stone-500 text-xs">Отказ кормить Левиафана своим вниманием и своими ресурсами.</p>
+                </div>
+            </div>
+        </div>
+    );
+
+    const CalhounView = () => {
+        const [density, setDensity] = useState(20);
+        const generateData = (count) => Array.from({ length: count }, (_, i) => ({
+            x: Math.random() * 100,
+            y: Math.random() * 100,
+            z: 5 + Math.random() * 10,
+            id: i
+        }));
+        const data = generateData(density);
+        const infernoLevel = density >= 240 ? 'АД' : density >= 140 ? 'Пекло' : density >= 80 ? 'Жар' : 'Норма';
+
+        return (
+            <div className="space-y-8 animate-in fade-in duration-700">
+                <div className="max-w-3xl">
+                    <h2 className="text-4xl font-serif text-stone-900 mb-6 italic">Вселенная 25: Токсичная чашка Петри</h2>
+                    <p className="text-lg text-stone-700 leading-relaxed mb-4">
+                        Современные мегаполисы — это и есть загон Калхуна. Скученность и избыток социальных контактов неизбежно приводят популяцию к «поведенческой клоаке», отказу от размножения и вымиранию.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                    <div className={`p-8 rounded-2xl border shadow-inner ${density >= 200 ? 'bg-red-50/70 border-red-200' : 'bg-stone-100 border-stone-200'}`}>
+                        <h3 className="text-sm uppercase tracking-widest text-stone-500 mb-2">Визуализация плотности контактов</h3>
+                        <div className="min-h-[320px] w-full relative overflow-hidden rounded-xl">
+                            <div className="absolute inset-0" style={{
+                                background: `radial-gradient(circle at 50% 50%, rgba(127,29,29,${Math.min(0.55, density/260)}), transparent 65%)`,
+                                pointerEvents: 'none'
+                            }}></div>
+                            <svg viewBox="0 0 100 100" className="w-full h-[320px] bg-stone-200/40 rounded-xl border border-stone-200">
+                                {data.map((pt) => (
+                                    <circle key={pt.id} cx={pt.x} cy={pt.y} r={pt.z / 8}
+                                        fill={density > 180 ? '#991b1b' : density > 100 ? '#b45309' : '#44403c'} fillOpacity="0.72" />
+                                ))}
+                                <rect x="5" y="5" width="90" height="90" fill="none" stroke="#d6d3d1" strokeDasharray="4 4" />
+                                {density >= 220 && (
+                                    <text x="50" y="52" textAnchor="middle" fill="#7f1d1d" fontSize="10" fontWeight="bold">АД</text>
+                                )}
+                            </svg>
+                        </div>
+                        <div className="mt-8 space-y-3">
+                            <label className="text-sm font-bold text-stone-700 flex justify-between">
+                                <span>Плотность населения</span>
+                                <span>{infernoLevel}</span>
+                            </label>
+                            <input 
+                                type="range" min="5" max="300" value={density}
+                                onChange={(e) => setDensity(parseInt(e.target.value, 10))}
+                                className="w-full h-2 bg-stone-300 rounded-lg appearance-none cursor-pointer accent-red-700"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-6">
+                        <div className={`p-6 border-l-4 transition-colors duration-500 ${density > 100 ? 'border-red-900 bg-red-50' : 'border-stone-800 bg-stone-50'}`}>
+                            <h4 className="font-bold text-stone-800 mb-2 font-serif">Последствия скученности:</h4>
+                            <ul className="list-disc list-inside text-stone-600 space-y-2 text-sm italic">
+                                <li>Потеря социальных навыков</li>
+                                <li>Гипер-агрессия без повода</li>
+                                <li>Отказ от заботы о потомстве</li>
+                                <li>Уход в виртуальные симуляции</li>
+                                <li>Окончательное вымирание при полном достатке</li>
+                            </ul>
+                        </div>
+                        <p className="text-stone-500 italic text-sm font-serif">
+                            Мы теряем рассудок не из-за голода, а из-за бесконечного шума чужих жизней.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const DunbarView = () => {
+        const data = [
+            { name: 'Близкие связи', value: 5, color: '#1c1917' },
+            { name: 'Друзья', value: 15, color: '#44403c' },
+            { name: 'Знакомые', value: 50, color: '#78716c' },
+            { name: 'Когнитивный предел (Община)', value: 80, color: '#a8a29e' },
+        ];
+
+        return (
+            <div className="space-y-12 animate-in fade-in duration-700">
+                <div className="max-w-3xl">
+                    <h2 className="text-4xl font-serif text-stone-900 mb-6 italic">150: Предел человечности</h2>
+                    <p className="text-lg text-stone-700 leading-relaxed mb-4">
+                        Антрополог Робин Данбар установил когнитивный предел социальных связей. Все, что выходит за рамки общины в 150 человек, превращается в безликую массу, управляемую только страхом или ложью.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div className="min-h-[220px] w-full flex flex-col items-center">
+                        <div className="w-full space-y-3">
+                            {data.map((item) => (
+                                <div key={item.name} className="flex items-center gap-3">
+                                    <div className="w-16 text-[11px] uppercase tracking-tight text-stone-500">{item.name}</div>
+                                    <div className="flex-1 h-3 rounded-full bg-stone-200 overflow-hidden">
+                                        <div className="h-full" style={{ width: `${item.value / 80 * 100}%`, backgroundColor: item.color }}></div>
+                                    </div>
+                                    <div className="w-10 text-right text-xs text-stone-600 font-mono">{item.value}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-center mt-6">
+                            <span className="text-3xl font-serif font-bold text-stone-800">Σ = 150</span>
+                            <p className="text-xs text-stone-400 uppercase tracking-widest font-serif">Максимальный размер общины</p>
+                        </div>
+                    </div>
+                    <div className="space-y-8 font-serif">
+                        <div className="bg-white p-6 rounded-lg shadow-sm border border-stone-100">
+                            <h4 className="text-stone-900 font-bold mb-3 italic">Почему это важно?</h4>
+                            <div className="space-y-4">
+                                <div className="flex gap-4">
+                                    <div className="w-10 h-10 shrink-0 bg-stone-800 text-white flex items-center justify-center rounded-full font-serif italic text-lg">1</div>
+                                    <p className="text-stone-600 text-sm italic leading-snug">В общине такого размера невозможна анонимная подлость. Репутация — единственный капитал.</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="w-10 h-10 shrink-0 bg-stone-800 text-white flex items-center justify-center rounded-full font-serif italic text-lg">2</div>
+                                    <p className="text-stone-600 text-sm italic leading-snug">Отсутствие бюрократии. Решения принимаются в ходе прямого диалога.</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="w-10 h-10 shrink-0 bg-stone-800 text-white flex items-center justify-center rounded-full font-serif italic text-lg">3</div>
+                                    <p className="text-stone-600 text-sm italic leading-snug">Биологический резонанс. Наш мозг эволюционировал именно для таких масштабов.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <blockquote className="border-l-4 border-stone-300 pl-6 italic text-stone-500 text-xl leading-relaxed">
+                            "Идеальная структура будущего — это сеть автономных аграрных поселений, где каждый знает каждого в лицо."
+                        </blockquote>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const EconomyView = () => {
+        const [laborHours, setLaborHours] = useState(8);
+        const [consumptionLevel, setConsumptionLevel] = useState(50);
+        const autonomyLevel = 100 - consumptionLevel;
+
+        const productionValue = useMemo(() => {
+            const fatigueFactor = laborHours > 10 ? 1 - (laborHours - 10) * 0.15 : 1;
+            const basicOutput = laborHours * 10;
+            const localEfficiency = 0.5 + (autonomyLevel / 100);
+            return Math.max(0, Math.floor(basicOutput * localEfficiency * fatigueFactor));
+        }, [laborHours, autonomyLevel]);
+
+        const sustainabilityIndex = useMemo(() => {
+            const exhaustion = laborHours > 9 ? (laborHours - 9) * 15 : 0;
+            const dependencyRisk = consumptionLevel * 0.5;
+            return Math.max(5, 100 - exhaustion - dependencyRisk);
+        }, [laborHours, consumptionLevel]);
+
+        const radarData = [
+            { subject: 'Свобода', A: autonomyLevel, fullMark: 100 },
+            { subject: 'Мастерство', A: Math.min(100, (productionValue / 150) * 100), fullMark: 100 },
+            { subject: 'Ресурс', A: sustainabilityIndex, fullMark: 100 },
+            { subject: 'Покой', A: Math.max(0, 100 - (laborHours * 7)), fullMark: 100 },
+            { subject: 'Здоровье', A: 100 - (consumptionLevel * 0.3) - (laborHours > 10 ? 30 : 0), fullMark: 100 },
+        ];
+
+        const barData = [
+            { name: 'Город', Зависимость: 70, color: '#a8a29e' },
+            { name: 'Вы', Зависимость: consumptionLevel, color: '#1c1917' }
+        ];
+
+        const getElderAnalysis = () => {
+            if (autonomyLevel > 80 && laborHours <= 8) return "Твой дом автономен, твои руки знают дело. Ты не просишь у Левиафана ничего, и он теряет над тобой власть.";
+            if (laborHours > 12) return "Ты загоняешь себя как раб на галерах. Рай не строится на износе души. Умерь пыл, вернись к созерцанию.";
+            if (consumptionLevel > 70) return "Ты все еще привязан к рынку золотыми цепями. Каждая покупка — это голос за твое собственное рабство.";
+            if (autonomyLevel > 50) return "Ты на верном пути. Твоё хозяйство крепнет. Скоро ты забудешь, что такое долги и налоги.";
+            return "Ты слишком слаб. Город высасывает твои силы через ненужные желания. Начни с аскезы.";
+        };
+
+        return (
+            <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700 font-serif pb-24 md:pb-0">
+                <div className="max-w-3xl">
+                    <h2 className="text-3xl md:text-5xl text-stone-900 mb-4 md:mb-6 italic">Уклад Автономной Жизни</h2>
+                    <p className="text-lg md:text-xl text-stone-700 leading-relaxed font-light">
+                        Это про личную автономию и ремесло. Когда человек сам обеспечивает свои базовые нужды, 
+                        он становится неуязвим для политических и экономических манипуляций.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-stretch">
+                    <div className="lg:col-span-4 bg-white p-6 md:p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col justify-between space-y-6 md:space-y-8">
+                        <div className="space-y-8">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 font-sans">Личные настройки</h3>
+                            <div className="space-y-8">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-sm font-bold text-stone-800 uppercase tracking-tighter font-sans">Личный Труд</label>
+                                        <span className="text-xl italic text-stone-900">{laborHours} ч</span>
+                                    </div>
+                                    <input 
+                                        type="range" min="1" max="16" step="1" value={laborHours}
+                                        onChange={(e) => setLaborHours(parseInt(e.target.value, 10))}
+                                        className="w-full h-2 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-stone-900"
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-sm font-bold text-stone-800 uppercase tracking-tighter font-sans">Зависимость от рынка</label>
+                                        <span className="text-xl italic text-stone-900">{consumptionLevel}%</span>
+                                    </div>
+                                    <input 
+                                        type="range" min="0" max="100" step="1" value={consumptionLevel}
+                                        onChange={(e) => setConsumptionLevel(parseInt(e.target.value, 10))}
+                                        className="w-full h-2 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-stone-900"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="pt-6 border-t border-stone-100">
+                            <div className="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                                <p className="text-base md:text-lg text-stone-700 italic leading-relaxed">
+                                    {getElderAnalysis()}
+                                </p>
+                                <p className="text-[10px] uppercase font-bold text-stone-400 mt-4 tracking-widest font-sans">— Мудрость Старостата</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-5 bg-stone-100 p-6 md:p-8 rounded-3xl border border-stone-200 flex flex-col items-center">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4 w-full text-left font-sans">Баланс Сил</h3>
+                        <div className="w-full space-y-3">
+                            {radarData.map((item) => (
+                                <div key={item.subject} className="flex items-center gap-3">
+                                    <div className="w-20 text-[11px] uppercase tracking-tight text-stone-500">{item.subject}</div>
+                                    <div className="flex-1 h-2.5 rounded-full bg-stone-200 overflow-hidden">
+                                        <div className="h-full" style={{ width: `${item.A}%`, backgroundColor: '#1c1917' }}></div>
+                                    </div>
+                                    <div className="w-12 text-right text-xs text-stone-600 font-mono">{item.A.toFixed(0)}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="lg:col-span-3 space-y-4 md:space-y-6">
+                        <div className="bg-white p-6 rounded-3xl border border-stone-200 h-1/2 flex flex-col min-h-[160px]">
+                            <h4 className="text-[10px] uppercase font-bold text-stone-400 mb-4 tracking-widest font-sans">Индекс Суверенитета</h4>
+                            <div className="space-y-3">
+                                {barData.map((entry) => (
+                                    <div key={entry.name} className="flex items-center gap-3">
+                                        <div className="w-14 text-[11px] uppercase tracking-tight text-stone-500">{entry.name}</div>
+                                        <div className="flex-1 h-2.5 rounded-full bg-stone-200 overflow-hidden">
+                                            <div className="h-full" style={{ width: `${entry['Зависимость']}%`, backgroundColor: entry.color }}></div>
+                                        </div>
+                                        <div className="w-10 text-right text-xs text-stone-600 font-mono">{entry['Зависимость']}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="bg-stone-900 p-6 md:p-8 rounded-3xl h-1/2 flex flex-col justify-center text-stone-100 min-h-[160px]">
+                            <p className="text-xl md:text-2xl italic leading-tight">
+                                Твоё богатство — это не то, что ты <span className="text-stone-400">имеешь</span>, а то, в чем ты <span className="text-stone-400">не нуждаешься</span>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const SettlementMapView = () => {
+        const [selectedZone, setSelectedZone] = useState(null);
+        const zones = [
+            {
+                id: 'council',
+                name: 'Очаг Старейшин',
+                description: 'Центр мудрости. Здесь горит вечный огонь общины, вокруг которого толкуются обычаи и разрешаются споры. Власть здесь не в приказах, а в словах, проверенных временем.',
+                icon: '🔥'
+            },
+            {
+                id: 'hearths',
+                name: 'Жилые Подворья',
+                description: 'Дома 20-25 семей, сплетенные в единую ткань. Каждый двор — это крепость и мастерская одновременно. Сосед знает соседа по шагам.',
+                icon: '🏠'
+            },
+            {
+                id: 'water',
+                name: 'Живая Вода',
+                description: 'Общий колодец и ручей. Место встречи и очищения. Вода принадлежит земле, а не корпорации.',
+                icon: '💧'
+            },
+            {
+                id: 'barn',
+                name: 'Общий Амбар',
+                description: 'Страховой запас. Здесь хранится излишек, который гарантирует, что ни один член общины не будет голодать зимой. Общий ресурс, но без идеологии.',
+                icon: '🌾'
+            },
+            {
+                id: 'grove',
+                name: 'Священная Роща',
+                description: 'Место тишины на границе леса. Здесь человек встречается с вечностью, восстанавливая связь с предками и природой.',
+                icon: '🌲'
+            }
+        ];
+
+        return (
+            <div className="space-y-12 animate-in fade-in duration-700 font-serif">
+                <div className="max-w-3xl">
+                    <h2 className="text-4xl md:text-5xl text-stone-900 mb-6 italic leading-tight">Геометрия Покоя</h2>
+                    <p className="text-xl text-stone-700 leading-relaxed font-light">
+                        Идеальное поселение — это не просто архитектура, это ландшафт души. 
+                        Оно организовано радиально, где каждый слой удаляет нас от хаоса и приближает к тишине.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                    <div className="lg:col-span-7 relative group">
+                        <div className="bg-[#fcf9f2] p-8 rounded-[4rem] border-2 border-stone-200 shadow-2xl overflow-hidden relative">
+                            <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-multiply">
+                                <img src="https://www.transparenttextures.com/patterns/natural-paper.png" alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <svg viewBox="0 0 400 400" className="w-full h-full drop-shadow-lg relative z-10">
+                                <circle cx="200" cy="200" r="180" fill="none" stroke="#e7e5e4" strokeWidth="1" strokeDasharray="5,5" />
+                                <circle cx="200" cy="200" r="120" fill="none" stroke="#d6d3d1" strokeWidth="1" strokeDasharray="5,5" />
+                                <circle cx="200" cy="200" r="60" fill="none" stroke="#a8a29e" strokeWidth="1" strokeDasharray="5,5" />
+                                <path 
+                                    d="M200,20 Q220,15 240,20 T300,50 T350,100 T380,200 T350,300 T200,380 T50,300 T20,200 T50,100 T150,30 Z" 
+                                    fill="#f5f5f4" stroke="#d6d3d1" strokeWidth="2" className="cursor-pointer hover:fill-stone-100 transition-colors"
+                                    onClick={() => setSelectedZone('grove')}
+                                />
+                                <g className="cursor-pointer" onClick={() => setSelectedZone('hearths')}>
+                                    {Array.from({length: 12}).map((_, i) => {
+                                        const angle = (i * 30) * (Math.PI / 180);
+                                        const x = 200 + 100 * Math.cos(angle);
+                                        const y = 200 + 100 * Math.sin(angle);
+                                        return (
+                                            <rect key={i} x={x-8} y={y-8} width="16" height="16" rx="2" fill="#78716c" 
+                                                transform={`rotate(${i*30}, ${x}, ${y})`} className="hover:fill-stone-900 transition-colors" />
+                                        );
+                                    })}
+                                </g>
+                                <circle cx="160" cy="200" r="15" fill="#a8a29e" className="cursor-pointer hover:fill-stone-600 transition-colors"
+                                    onClick={() => setSelectedZone('barn')} />
+                                <path d="M240,190 Q250,200 240,210 Q230,200 240,190" fill="#44403c" className="cursor-pointer hover:fill-stone-900 transition-colors"
+                                    onClick={() => setSelectedZone('water')} />
+                                <circle cx="200" cy="200" r="30" fill="#1c1917" className="cursor-pointer hover:scale-110 origin-center transition-transform"
+                                    onClick={() => setSelectedZone('council')} />
+                                <text x="200" y="205" textAnchor="middle" fill="white" className="text-[10px] font-bold pointer-events-none uppercase tracking-tighter">ОЧАГ</text>
+                                <g transform="translate(340, 60) scale(0.5)" className="opacity-30">
+                                    <path d="M0,0 L10,50 L-10,50 Z" fill="#78716c" />
+                                    <path d="M0,0 L10,-50 L-10,-50 Z" fill="#1c1917" />
+                                    <text x="0" y="-60" textAnchor="middle" className="text-2xl font-bold fill-stone-900">С</text>
+                                </g>
+                            </svg>
+                            <div className="absolute bottom-10 right-10 text-right">
+                                <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-stone-400 italic">Схема Райского Сада</p>
+                                <p className="text-[9px] text-stone-300 italic">Масштаб: 150 душ</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="p-8 bg-white rounded-3xl border border-stone-200 shadow-sm min-h-[400px] flex flex-col">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-8 pb-4 border-b border-stone-50">Мечты о руинах</h3>
+                            {!selectedZone ? (
+                                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6 animate-pulse">
+                                    <div className="text-5xl grayscale opacity-30">🗺️</div>
+                                    <p className="text-stone-400 italic text-sm">Нажмите на область карты, чтобы услышать шепот общины...</p>
+                                </div>
+                            ) : (
+                                <div className="flex-1 space-y-8 animate-in slide-in-from-right-4 duration-500">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-4xl">{zones.find(z => z.id === selectedZone)?.icon}</span>
+                                        <h4 className="text-2xl italic text-stone-900">{zones.find(z => z.id === selectedZone)?.name}</h4>
+                                    </div>
+                                    <p className="text-stone-700 leading-relaxed text-lg italic border-l-2 border-stone-200 pl-6">
+                                        {zones.find(z => z.id === selectedZone)?.description}
+                                    </p>
+                                    <button onClick={() => setSelectedZone(null)} className="text-[10px] uppercase font-bold tracking-widest text-stone-400 hover:text-stone-900 transition-colors">
+                                        ← Назад к горизонту
+                                    </button>
+                                </div>
+                            )}
+                            <div className="mt-auto pt-8 border-t border-stone-50 grid grid-cols-2 gap-4">
+                                {zones.slice(0, 4).map(z => (
+                                    <button key={z.id} onClick={() => setSelectedZone(z.id)}
+                                        className={`p-3 rounded-xl text-[10px] uppercase font-bold tracking-tighter transition-all ${selectedZone === z.id ? 'bg-stone-900 text-white' : 'bg-stone-50 text-stone-500 hover:bg-stone-100'}`}>
+                                        {z.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="bg-stone-900 text-stone-400 p-8 rounded-3xl italic text-sm leading-relaxed relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-2 text-stone-800 text-6xl opacity-20 font-serif leading-none">❧</div>
+                            <p className="relative z-10">
+                                "Нужно заселять руины старого мира, адаптируя их под нужды выживания. Первичная ячейка общества формируется автоматически по территориальному признаку."
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div className="pt-16 border-t border-stone-200">
+                    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+                        <div className="text-center space-y-4">
+                            <h5 className="font-bold text-xs uppercase tracking-[0.2em] text-stone-800">Отсутствие Стен</h5>
+                            <p className="text-xs text-stone-500 italic leading-relaxed">Безопасность обеспечивается не забором, а прозрачностью. В общине нет анонимности, а значит, нет места для скрытой угрозы.</p>
+                        </div>
+                        <div className="text-center space-y-4">
+                            <h5 className="font-bold text-xs uppercase tracking-[0.2em] text-stone-800">Ритм Солнца</h5>
+                            <p className="text-xs text-stone-500 italic leading-relaxed">Вся архитектура направлена на сохранение тепла и света. Мы живем в ритме биологических часов, а не электрических сетей.</p>
+                        </div>
+                        <div className="text-center space-y-4">
+                            <h5 className="font-bold text-xs uppercase tracking-[0.2em] text-stone-800">Вестники Покоя</h5>
+                            <p className="text-xs text-stone-500 italic leading-relaxed">Связь между ячейками редка и драгоценна. Информация передается из уст в уста, очищенная от цифрового шума.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const TransitionView = () => {
+        const [activeStep, setActiveStep] = useState(0);
+        const steps = [
+            {
+                title: "Тихий Саботаж",
+                description: "Отказ от цифрового шума и лишнего потребления. Накопление физических сил и ресурсов. Убийство Левиафана голодом.",
+                visual: "🔇",
+                action: "Перестаем покупать новые гаджеты и подписки."
+            },
+            {
+                title: "Великий Исход",
+                description: "Массовый отток из мегаполисов. Заселение заброшенных деревень и руин старого мира.",
+                visual: "🚶‍♂️",
+                action: "Занимаем пустующие земли по территориальному признаку."
+            },
+            {
+                title: "Жестокий Фильтр",
+                description: "Период адаптации к физическому труду. Вымирание неприспособленных. Оздоровление генофонда.",
+                visual: "⛏️",
+                action: "Первый урожай. Отказ от доставки еды и отопления."
+            },
+            {
+                title: "Учреждение Старостата",
+                description: "Стабилизация общины. Признание власти старейшины. Переход к экономике упрощения.",
+                visual: "⚖️",
+                action: "Мир в мудрой тишине под защитой традиций."
+            }
+        ];
+
+        return (
+            <div className="space-y-12 animate-in fade-in duration-700">
+                <div className="max-w-3xl">
+                    <h2 className="text-4xl font-serif text-stone-900 mb-6 italic">Путь к Пасторальному Раю</h2>
+                    <p className="text-lg text-stone-700 leading-relaxed">
+                        Переход — это не штурм зданий, а акт радикального ухода. Мы не ломаем систему, мы её покидаем.
+                    </p>
+                </div>
+                <div className="flex flex-col md:flex-row gap-6 relative">
+                    <div className="absolute top-1/2 left-0 w-full h-px bg-stone-200 hidden md:block -z-10"></div>
+                    {steps.map((step, idx) => (
+                        <button key={idx} onClick={() => setActiveStep(idx)}
+                            className={`flex-1 p-6 rounded-2xl border-2 transition-all text-left space-y-4 ${
+                                activeStep === idx 
+                                    ? 'bg-white border-stone-800 shadow-xl scale-105' 
+                                    : 'bg-stone-50 border-transparent grayscale opacity-60 hover:opacity-100 hover:grayscale-0'
+                            }`}>
+                            <div className="text-4xl">{step.visual}</div>
+                            <h4 className="font-bold text-stone-900 text-sm uppercase tracking-tight leading-none">{step.title}</h4>
+                        </button>
+                    ))}
+                </div>
+                <div className="bg-stone-900 text-stone-100 p-10 rounded-3xl shadow-2xl animate-in slide-in-from-top-4 duration-500">
+                    <div className="flex flex-col md:flex-row gap-10">
+                        <div className="flex-1 space-y-6">
+                            <span className="text-stone-500 text-xs font-bold uppercase tracking-widest">Этап {activeStep + 1}</span>
+                            <h3 className="text-3xl font-serif italic text-white">{steps[activeStep].title}</h3>
+                            <p className="text-stone-400 text-lg leading-relaxed">{steps[activeStep].description}</p>
+                        </div>
+                        <div className="md:w-1/3 bg-stone-800 p-6 rounded-2xl flex flex-col justify-center border border-stone-700">
+                            <h5 className="text-xs uppercase text-stone-500 mb-2 font-bold tracking-widest">Необходимое действие:</h5>
+                            <p className="text-white italic text-sm">"{steps[activeStep].action}"</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="text-center italic text-stone-500 text-sm">
+                    "Экономика упрощения требует жертв, но это жертва опухоли ради спасения организма."
+                </div>
+            </div>
+        );
+    };
+
+    const WisdomGallery = () => {
+        const [selectedTopic, setSelectedTopic] = useState(null);
+        const wisdoms = [
+            { topic: "О городах", content: "Мегаполисы — это загон Калхуна. Скученность убивает рассудок. Мы должны покинуть вавилонские башни ради естественного ритма земли." },
+            { topic: "О власти", content: "Староста не нуждается в полиции. Его авторитет — это правда жизни, прожитой на глазах у всех. Мы доверяем опыту, а не пустым обещаниям." },
+            { topic: "О труде", content: "Труд становится осмысленным, когда его плоды принадлежат тебе и твоей семье. Мы убираем посредников: тех, кто ничего не производит, но хочет забирать." },
+            { topic: "О будущем", content: "Мир будет лишен неонового блеска, но полон истинного света. Мы вернемся к биологическим настройкам, где радость приносит реальное достижение, а не цифровой лайк." },
+            { topic: "О переходе", content: "Система питается твоим вниманием и твоими деньгами. Отрежь эти потоки. Массовый отказ от лишнего — это самая эффективная форма обретения свободы." },
+            { topic: "Об успехе", content: "Успех — это не цифра в банке, а крепкий дом, здоровые дети и уважение соседей. Всё остальное — пыль, которую развеет первый же серьезный кризис." }
+        ];
+
+        return (
+            <div className="space-y-12 animate-in fade-in duration-700 pb-24 md:pb-0">
+                <div className="max-w-3xl text-center mx-auto">
+                    <h2 className="text-4xl md:text-5xl font-serif text-stone-900 mb-6 italic">Совет Старостата</h2>
+                    <p className="text-lg md:text-xl text-stone-600 font-light italic leading-relaxed">
+                        "Главой общины становится тот, кто прожил дольше всех и сохранил ясность ума. Его власть ограничена традицией и здравым смыслом."
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                    {wisdoms.map((w, i) => (
+                        <div key={i} onClick={() => setSelectedTopic(i)}
+                            className={`cursor-pointer p-6 md:p-8 rounded-3xl border transition-all flex flex-col justify-between min-h-[220px] ${
+                                selectedTopic === i 
+                                    ? 'bg-stone-900 text-white border-stone-800 shadow-2xl scale-105 z-10' 
+                                    : 'bg-white border-stone-200 text-stone-800 hover:border-stone-400 shadow-sm'
+                            }`}>
+                            <h4 className={`text-xs uppercase tracking-widest mb-4 font-bold ${selectedTopic === i ? 'text-stone-500' : 'text-stone-400'}`}>
+                                Вопрос: {w.topic}
+                            </h4>
+                            <p className={`font-serif italic text-base md:text-lg leading-relaxed ${selectedTopic === i ? 'text-stone-100' : 'text-stone-700'}`}>
+                                {selectedTopic === i ? w.content : `Размышления о том, как устроен ${w.topic.toLowerCase()}...`}
+                            </p>
+                            <div className="mt-4 flex justify-end">
+                                <span className={`text-[10px] uppercase font-bold tracking-tighter ${selectedTopic === i ? 'opacity-30' : 'opacity-50'}`}>
+                                    {selectedTopic === i ? 'Слово сказано' : 'Нажать для толкования'}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="max-w-2xl mx-auto p-8 md:p-10 bg-stone-100/50 rounded-3xl border border-stone-200 text-center">
+                    <p className="text-sm md:text-base text-stone-500 italic leading-relaxed">
+                        "Ценность человека определяется не его абстрактными правами, а его способностью возделывать сад и нести ответственность за свою жизнь."
+                    </p>
+                </div>
+            </div>
+        );
+    };
+
+    const NatureView = () => {
+        const aestheticImages = [
+            { url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800", caption: "Тишина полей", description: "Где заканчивается шум колес, начинается шепот колосьев." },
+            { url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800", caption: "Мудрость леса", description: "Деревья не спешат, но всё успевают. Это ритм, который мы забыли." },
+            { url: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=800", caption: "Чистый горизонт", description: "Взгляд, не упирающийся в бетон, обретает ясность." }
+        ];
+
+        return (
+            <div className="space-y-12 md:space-y-16 animate-in fade-in duration-1000 font-serif">
+                <div className="max-w-3xl mx-auto text-center space-y-8 relative">
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none">
+                        <svg width="120" height="60" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-stone-800">
+                            <path d="M60 10C50 10 40 20 40 30C40 40 50 50 60 50C70 50 80 40 80 30C80 20 70 10 60 10ZM60 45C52 45 45 38 45 30C45 22 52 15 60 15C68 15 75 22 75 30C75 38 68 45 60 45Z" fill="currentColor"/>
+                            <path d="M20 30C20 20 30 15 40 15M100 30C100 20 90 15 80 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <circle cx="10" cy="30" r="3" fill="currentColor"/>
+                            <circle cx="110" cy="30" r="3" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h2 className="text-4xl md:text-7xl text-stone-900 italic tracking-tight leading-none pt-4">
+                        Мудрая тишина Сада
+                    </h2>
+                    <p className="text-lg md:text-2xl text-stone-700 font-light leading-relaxed max-w-2xl mx-auto px-4">
+                        «Да, этот мир будет лишен блеска неоновых вывесок. Но взамен он даст то, что мы утратили. 
+                        Жизнь в гармонии с нашими биологическими настройками.»
+                    </p>
+                    <div className="flex items-center justify-center gap-4">
+                        <div className="h-px w-16 bg-stone-300"></div>
+                        <span className="text-stone-400 text-lg">🌿</span>
+                        <div className="h-px w-16 bg-stone-300"></div>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    {aestheticImages.map((img, i) => (
+                        <div key={i} className="group cursor-default flex flex-col items-center">
+                            <div className="relative p-3 bg-[#fdfaf3] shadow-[0_10px_30px_rgba(0,0,0,0.1)] border border-stone-200 rotate-1 group-hover:rotate-0 transition-transform duration-500">
+                                <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-stone-300 opacity-50"></div>
+                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-stone-300 opacity-50"></div>
+                                <div className="overflow-hidden aspect-[4/5] bg-stone-200">
+                                    <img src={img.url} alt={img.caption}
+                                        className="w-full h-full object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-1000 scale-110 group-hover:scale-100" />
+                                </div>
+                            </div>
+                            <div className="mt-8 text-center space-y-3 px-4 max-w-xs">
+                                <h4 className="text-lg font-bold text-stone-800 italic uppercase tracking-tighter">{img.caption}</h4>
+                                <p className="text-stone-600 italic text-sm leading-relaxed border-t border-stone-100 pt-3">{img.description}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="relative bg-[#efece4] text-stone-900 p-12 md:p-20 rounded-lg shadow-2xl overflow-hidden border border-stone-200">
+                    <div className="absolute inset-0 opacity-40 pointer-events-none mix-blend-multiply">
+                        <img src="https://www.transparenttextures.com/patterns/natural-paper.png" alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="absolute top-4 left-4 w-12 h-12 text-stone-300 opacity-40">
+                        <svg viewBox="0 0 100 100" fill="currentColor"><path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z"/></svg>
+                    </div>
+                    <div className="absolute bottom-4 right-4 w-12 h-12 text-stone-300 opacity-40 rotate-180">
+                        <svg viewBox="0 0 100 100" fill="currentColor"><path d="M0 0 L100 0 L100 20 L20 20 L20 100 L0 100 Z"/></svg>
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row gap-16 items-center">
+                        <div className="flex-1 space-y-8">
+                            <h3 className="text-4xl md:text-5xl italic text-stone-900 leading-none">Психологическое здоровье</h3>
+                            <p className="text-stone-700 text-xl leading-relaxed italic border-l-2 border-stone-300 pl-8">
+                                Природа — это не ресурс. Это зеркало нашего состояния. Когда мы возвращаемся к возделанному полю, 
+                                мы перестаем быть деталями в механизме Левиафана. Мы становимся частью живого цикла.
+                            </p>
+                            <div className="pt-8 flex flex-wrap gap-12 border-t border-stone-300/50">
+                                <div className="flex flex-col"><span className="text-4xl italic text-stone-900 font-bold">0%</span><span className="text-xs uppercase tracking-widest text-stone-500 font-bold mt-2 italic">Цифрового шума</span></div>
+                                <div className="flex flex-col"><span className="text-4xl italic text-stone-900 font-bold">100%</span><span className="text-xs uppercase tracking-widest text-stone-500 font-bold mt-2 italic">Присутствия</span></div>
+                                <div className="flex flex-col"><span className="text-4xl italic text-stone-900 font-bold">∞</span><span className="text-xs uppercase tracking-widest text-stone-500 font-bold mt-2 italic">Покоя</span></div>
+                            </div>
+                        </div>
+                        <div className="w-full md:w-2/5 aspect-square bg-[#f5f2eb] rounded-full flex items-center justify-center p-12 border border-stone-300 shadow-inner relative group">
+                            <div className="absolute inset-0 rounded-full border-4 border-dashed border-stone-200 animate-[spin_60s_linear_infinite]"></div>
+                            <div className="text-center space-y-6 relative z-10">
+                                <div className="text-7xl transition-transform duration-700 group-hover:scale-110">🌲</div>
+                                <div className="space-y-2">
+                                    <p className="text-xs uppercase font-bold tracking-[0.2em] text-stone-400 italic">Обрести покой</p>
+                                    <p className="text-sm italic text-stone-600 leading-snug">
+                                        "Ценность человека определяется его способностью возделывать сад вокруг себя."
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="max-w-3xl mx-auto py-12 border-t border-stone-200">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                        <p className="text-stone-400 text-2xl">❧</p>
+                        <p className="text-stone-500 italic text-lg md:text-xl leading-relaxed max-w-xl">
+                            "Мы вернемся к естественному отбору, но не в джунглях, а на возделанном поле."
+                        </p>
+                        <p className="text-stone-300 text-sm tracking-[0.3em] font-bold pt-4 uppercase">Sapientia in Silentio</p>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const App = () => {
+        const [currentView, setCurrentView] = useState(View.INTRO);
+        const renderContent = () => {
+            switch (currentView) {
+                case View.INTRO: return <Intro onNext={() => setCurrentView(View.CALHOUN)} />;
+                case View.CALHOUN: return <CalhounView />;
+                case View.DUNBAR: return <DunbarView />;
+                case View.ECONOMY: return <EconomyView />;
+                case View.MAP: return <SettlementMapView />;
+                case View.TRANSITION: return <TransitionView />;
+                case View.NATURE: return <NatureView />;
+                case View.WISDOM: return <WisdomGallery />;
+                default: return <Intro onNext={() => setCurrentView(View.CALHOUN)} />;
+            }
+        };
+        return (
+            <div className="min-h-screen flex flex-col parchment transition-colors duration-1000 pb-16 md:pb-0">
+                <header className="py-4 md:py-6 px-6 md:px-8 border-b border-stone-200 flex flex-col md:flex-row justify-between items-center bg-stone-50/50 backdrop-blur-sm sticky top-0 z-40 gap-4 md:gap-0">
+                    <div className="text-center md:text-left">
+                        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-stone-800 uppercase italic">Великий Исход</h1>
+                        <p className="text-[10px] text-stone-500 uppercase tracking-widest">Автономия • Покой • Традиция</p>
+                    </div>
+                    <Navigation currentView={currentView} setView={setCurrentView} />
+                </header>
+                <main className="flex-1 flex flex-col container mx-auto px-4 py-8 md:py-12 max-w-5xl">
+                    {renderContent()}
+                </main>
+                <footer className="py-8 px-8 border-t border-stone-200 text-center text-stone-400 text-xs md:text-sm mb-16 md:mb-0">
+                    <p>© Старостат. Мудрость в тишине. 2025 – ∞</p>
+                </footer>
+            </div>
+        );
+    };
+
+    const rootElement = document.getElementById('root');
+    ReactDOM.createRoot(rootElement).render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    );
+</script>
 </body>
 </html>
+
